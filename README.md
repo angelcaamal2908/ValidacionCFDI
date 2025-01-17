@@ -1,5 +1,6 @@
 # ValidacionCFDI
 
+Contiene Todos los Archivos Necesarios, Tiene el Excel y los Script de SQL
 
 Validación y Reporte de CFDIs
 
