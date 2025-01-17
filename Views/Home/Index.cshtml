@@ -1,0 +1,138 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row">
+    <div class="col-sm-12">
+
+        <div class="card">
+            <div class="card-header"> Cargar Excel</div>
+            <div class="card-body">
+
+                <div class="row">
+                    <div class="col-sm-4">
+                        <input class="form-control-file" type="file" id="inputExcel" />
+                    </div>
+                    <div class="col-sm-4">
+                        <button class="btn btn-warning" onclick="mostrarDatos()">Mostrar Datos</button>
+                        <button class="btn btn-success" onclick="enviarDatos()">Enviar Datos a BD</button>
+                        <button class="btn btn-primary" onclick="validarCFDI()">Validar CFDIs</button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <table id="tbData" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>RFC Emisor</th>
+                                    <th>RFC Receptor</th>
+                                    <th>Folio Fiscal</th>
+                                    <th>Fecha de Emisión</th>
+                                    <th>Total</th>
+                                    <th>Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+
+    <script>
+
+        function mostrarDatos() {
+            const input = document.getElementById("inputExcel");
+            const formData = new FormData();
+
+            formData.append("ArchivoExcel", input.files[0]);
+
+            fetch("Home/MostrarDatos", {
+                method: "POST",
+                body: formData
+            })
+            .then((response) => response.json())
+            .then((dataJson) => {
+                $("#tbData tbody").empty();
+                dataJson.forEach((item) => {
+                    $("#tbData tbody").append(
+                        $("<tr>").append(
+                            $("<td>").text(item.rfcEmisor),
+                            $("<td>").text(item.rfcReceptor),
+                            $("<td>").text(item.folioFiscal),
+                            $("<td>").text(item.fechaEmision),
+                            $("<td>").text(item.total),
+                            $("<td>").text(item.estatus)
+                        )
+                    );
+                });
+            });
+        }
+
+        function enviarDatos() {
+            const input = document.getElementById("inputExcel");
+            const formData = new FormData();
+
+            formData.append("ArchivoExcel", input.files[0]);
+
+            fetch("Home/EnviarDatos", {
+                method: "POST",
+                body: formData
+            })
+            .then((response) => response.json())
+            .then((dataJson) => {
+                alert(dataJson.mensaje);
+            });
+        }
+                function validarCFDI() {
+            const data = [];
+            $("#tbData tbody tr").each(function () {
+                const row = $(this).find("td");
+                data.push({
+                    rfcEmisor: row.eq(0).text(),
+                    rfcReceptor: row.eq(1).text(),
+                    folioFiscal: row.eq(2).text(),
+                    total: parseFloat(row.eq(4).text()),
+                });
+            });
+
+            console.log(data); // Verifica que los datos sean correctos
+
+            fetch("Home/ValidarCFDI", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then((response) => response.json())
+            .then((resultados) => {
+                resultados.forEach((item, index) => {
+                    // Encuentra la fila correspondiente en la tabla
+                    const fila = $("#tbData tbody tr").eq(index);
+                    if (fila.length) {
+                        // Actualiza solo la columna de estatus
+                        fila.find("td").eq(5).text(item.estatus);
+                    }
+                });
+            })
+            .catch((error) => {
+                console.error("Error al validar CFDIs:", error);
+                alert("Ocurrió un error al validar los CFDIs.");
+            });
+        }
+
+
+    </script>
+
+}
