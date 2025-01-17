@@ -4,7 +4,6 @@
 
 <div class="row">
     <div class="col-sm-12">
-
         <div class="card">
             <div class="card-header"> Cargar Excel</div>
             <div class="card-body">
@@ -21,6 +20,32 @@
                 </div>
 
                 <hr />
+
+                <div class="row">
+                    <div class="col-sm-4">
+                        <input type="text" id="filtroRfcEmisor" class="form-control" placeholder="Filtrar por RFC Emisor" />
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" id="filtroRfcReceptor" class="form-control" placeholder="Filtrar por RFC Receptor" />
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" id="filtroEstatus" class="form-control" placeholder="Filtrar por Estatus" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <button class="btn btn-info" onclick="consultarCFDIs()">Filtrar CFDIs</button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <button class="btn btn-success" onclick="descargarExcel()">Descargar Excel</button>
+                    </div>
+                </div>
 
                 <div class="row">
                     <div class="col-sm-12">
@@ -48,7 +73,6 @@
 </div>
 
 @section Scripts {
-
     <script>
 
         function mostrarDatos() {
@@ -94,7 +118,8 @@
                 alert(dataJson.mensaje);
             });
         }
-                function validarCFDI() {
+
+        function validarCFDI() {
             const data = [];
             $("#tbData tbody tr").each(function () {
                 const row = $(this).find("td");
@@ -106,8 +131,6 @@
                 });
             });
 
-            console.log(data); // Verifica que los datos sean correctos
-
             fetch("Home/ValidarCFDI", {
                 method: "POST",
                 headers: {
@@ -118,21 +141,55 @@
             .then((response) => response.json())
             .then((resultados) => {
                 resultados.forEach((item, index) => {
-                    // Encuentra la fila correspondiente en la tabla
                     const fila = $("#tbData tbody tr").eq(index);
                     if (fila.length) {
-                        // Actualiza solo la columna de estatus
-                        fila.find("td").eq(5).text(item.estatus);
+                        let estatusCell = fila.find(".estatus");
+                        if (estatusCell.length === 0) {
+                            estatusCell = $("<td>").addClass("estatus");
+                            fila.append(estatusCell);
+                        }
+                        estatusCell.text(item.estatus);
                     }
                 });
-            })
-            .catch((error) => {
-                console.error("Error al validar CFDIs:", error);
-                alert("Ocurrió un error al validar los CFDIs.");
             });
         }
 
+        function consultarCFDIs() {
+            const rfcEmisor = document.getElementById("filtroRfcEmisor").value;
+            const rfcReceptor = document.getElementById("filtroRfcReceptor").value;
+            const estatus = document.getElementById("filtroEstatus").value;
+
+            let url = `Home/ConsultarCFDIs?rfcEmisor=${rfcEmisor}&rfcReceptor=${rfcReceptor}&estatus=${estatus}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(dataJson => {
+                    $("#tbData tbody").empty();
+                    dataJson.forEach((item) => {
+                        $("#tbData tbody").append(
+                            $("<tr>").append(
+                                $("<td>").text(item.rfcEmisor),
+                                $("<td>").text(item.rfcReceptor),
+                                $("<td>").text(item.folioFiscal),
+                                $("<td>").text(item.fechaEmision),
+                                $("<td>").text(item.total),
+                                $("<td>").text(item.estatus)
+                            )
+                        );
+                    });
+                });
+        }
+
+        // Función para descargar el Excel con los CFDIs filtrados
+        function descargarExcel() {
+            const rfcEmisor = document.getElementById("filtroRfcEmisor").value;
+            const rfcReceptor = document.getElementById("filtroRfcReceptor").value;
+            const estatus = document.getElementById("filtroEstatus").value;
+
+            let url = `Home/DescargarCFDIs?rfcEmisor=${rfcEmisor}&rfcReceptor=${rfcReceptor}&estatus=${estatus}`;
+
+            window.location.href = url;  // Redirige a la URL del controlador para descargar el archivo
+        }
 
     </script>
-
 }
